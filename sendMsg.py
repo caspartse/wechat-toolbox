@@ -212,7 +212,8 @@ class WebChat(object):
             'id': 'WU_FILE_0',
             'name': '%d.%s' % (time(), imghdr.what(fileName)),  # fake
             'type': mimeType,
-            'lastModifiedDate': strftime('%a %b %d %Y %H:%M:%S GMT+0800 (SCT)', localtime()),  # fake
+            # fake
+            'lastModifiedDate': strftime('%a %b %d %Y %H:%M:%S GMT+0800 (SCT)', localtime()),
             'size': str(imgLen),
             'mediatype': 'pic',
             'uploadmediarequest': json.dumps(payload, ensure_ascii=False).encode('utf-8'),
