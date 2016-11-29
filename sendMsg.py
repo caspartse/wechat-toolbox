@@ -157,7 +157,7 @@ class WebChat(object):
 
     def sendTextMsg(self, userName, text):
         if self.wxInitVersion == 1:
-            url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendappmsg?fun=async&f=json&pass_ticket=%s' % (
+            url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg?pass_ticket=%s' % (
                 self.params['pass_ticket'])
         else:
             url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg'
@@ -184,8 +184,7 @@ class WebChat(object):
 
     def uploadImage(self, userName, fileName):
         if self.wxInitVersion == 1:
-            url = 'https://file.wx.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json&pass_ticket=%s' % (
-                self.params['pass_ticket'])
+            url = 'https://file.wx.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json'
         else:
             url = 'https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json'
         img = open(fileName, 'rb').read()
