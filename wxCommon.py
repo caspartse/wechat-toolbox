@@ -165,10 +165,23 @@ class WebChat(object):
                 genTimeStamp(13),
                 self.wx_params['skey']
             )
-        resp = self.sess.get(url, timeout=1000)
-        content = resp.content
-        data = json.loads(content)
-        self.wx_memberList = data['MemberList']
+        _memberList = []
+        _seq = 0
+        while 1:
+            pattern = r'seq=\d+'
+            url = re.sub(pattern, 'seq=' + str(_seq), url)
+            try:
+                resp = self.sess.get(url, timeout=10000)
+                content = resp.content
+                data = json.loads(content)
+                if resp.status_code == 200:
+                    _memberList.extend(data['MemberList'])
+                    _seq = data['Seq']
+                if str(_seq) == '0':
+                    break
+            except:
+                pass
+        self.wx_memberList = _memberList
         self.wx_memberDict = {contact['UserName']: contact for contact in self.wx_memberList}
         cookies = self.sess.cookies.get_dict()
         self.wx_params.update(cookies)

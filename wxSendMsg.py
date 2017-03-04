@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*
 from wxCommon import WebChat
-import re
+from wxUtils import *
 from time import time, sleep
 
 
@@ -13,7 +13,7 @@ def handle(self, resp):
     if ret == 0:
         print 'OK.'
     elif ret == 1205:
-        endTime = time() + 600
+        endTime = time() + 720
         while time() < endTime:
             print 'Sleep...'
             sleep(30)
@@ -28,18 +28,18 @@ if __name__ == '__main__':
     w.accountInit()
     print '=== %s ===\n' % (w.nickName)
     # Send to Friends
-    firends = [contact for contact in w.contactList if '@@' not in contact['UserName']]
+    firends = [contact for contact in w.wx_memberList if isPerson(contact)]
     total = len(firends)
     for index, firend in enumerate(firends):
-        print '[%d/%d] %s' % (index + 1, total, re.sub(r'</?span[^>]*>', '', firend['NickName']))
+        print '[%d/%d] %s' % (index + 1, total, removeEmoji(firend['NickName']))
         w.handle(w.sendTextMsg(firend['UserName'], u'转发这条锦鲤'))
         w.handle(w.sendImage(firend['UserName'], 'Koi.jpg'))
         sleep(7)
     # Send to Groups
-    groups = [contact for contact in w.contactList if '@@' in contact['UserName']]
+    groups = [contact for contact in w.wx_memberList if '@@' in contact['UserName']]
     total = len(groups)
     for index, group in enumerate(groups):
-        print '[%d/%d] %s' % (index + 1, total, re.sub(r'</?span[^>]*>', '', group['NickName']))
+        print '[%d/%d] %s' % (index + 1, total, removeEmoji(group['NickName']))
         w.handle(w.sendTextMsg(group['UserName'], u'转发这条锦鲤'))
         w.handle(w.sendImage(group['UserName'], 'Koi.jpg'))
         sleep(7)

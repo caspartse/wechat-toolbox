@@ -4,6 +4,7 @@ from time import time
 from random import randint
 from PIL import Image
 from StringIO import StringIO
+import re
 
 
 def genTimeStamp(length):
@@ -19,6 +20,36 @@ def genRandint(length):
 def displayImage(content):
     Image.open(StringIO(content)).show()
     return
+
+
+def isPerson(contact):
+    if '@@' in contact['UserName']:
+        return False
+    elif contact['UserName'] in ['filehelper', 'fmessage', 'mphelper',  'weixin', 'weixingongzhong', 'wxzhifu']:
+        return False
+    elif contact['VerifyFlag'] & 8 != 0:
+        return False
+    elif contact['KeyWord'] == 'gh_':
+        return False
+    else:
+        return True
+
+
+def removeEmoji(content):
+    content = re.sub(r'</?span[^>]*>|[\r\n\t]', ' ', content)
+    content.replace('&amp;', '&').strip()
+    return content
+
+
+def convertGender(sex):
+    if sex == 1:
+        gender = u'男'
+    elif sex == 2:
+        gender = u'女'
+    else:
+        gender = ''
+    return gender
+
 
 if __name__ == '__main__':
     pass
