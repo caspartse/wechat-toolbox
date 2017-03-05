@@ -345,7 +345,7 @@ class WebChat(object):
         headers.update({'Content-Type': m.content_type})
         resp = self.sess.post(
             url, headers=headers, data=m, timeout=1000)
-        mediaId = resp.json()['MediaId']
+        mediaId = json.loads(resp.content).get('MediaId')
         cookies = self.sess.cookies.get_dict()
         self.wx_params.update(cookies)
         mc.set('wx_session', self.sess)
