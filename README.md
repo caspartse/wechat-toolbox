@@ -9,13 +9,19 @@ WeChat toolbox.
 
 ## wxExportGroups.py
 * 导出群成员名单（昵称、微信号、群名片、是否好友、备注名、性别、省份、城市、签名）
-* 只能导出已保存至通讯录的群聊
+* 只能读取已保存至通讯录的群聊
 * 群成员按进群时间升序排序
 
 ## wxSendMessage.py
 * 向好友或微信群发送文本、图片消息
-* 只能读取已保存至通讯录的群
+* 只能读取已保存至通讯录的群聊
 * 连续发送约 100 次后，会受到限制，约 1 小时后才能复活正常
+
+
+# External Resources
+* [memcached](https://memcached.org/)
+* [XlsxWriter](https://xlsxwriter.readthedocs.io/)
+
 
 # Changelog
 
