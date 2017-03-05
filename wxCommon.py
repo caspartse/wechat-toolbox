@@ -211,8 +211,7 @@ class WebChat(object):
             'List': queryList
         }
         resp = self.sess.post(url, data=json.dumps(payload), timeout=1000)
-        data = json.loads(resp.content)
-        return data
+        return resp
 
     def syncCheck(self):
         syncKeyString = '%7C'.join(['%s_%s' % (

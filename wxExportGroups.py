@@ -11,13 +11,15 @@ w = WebChat()
 
 def queryGMemberList(gUserName):
     queryList = [{'UserName': gUserName, 'EncryChatRoomId': ''}]
-    data = w.batchGetContact(queryList)
+    resp = w.batchGetContact(queryList)
+    data = json.loads(resp.content)
     memberList = data['ContactList'][0]['MemberList']
     queryList = [{'UserName': m['UserName'], 'EncryChatRoomId': gUserName} for m in memberList]
     gMemberList = []
     chunks = [queryList[i:i + 50] for i in range(0, len(queryList), 50)]
     for chunk in chunks:
-        data = w.batchGetContact(chunk)
+        resp = w.batchGetContact(chunk)
+        data = json.loads(resp.content)
         gMemberList.extend(data['ContactList'])
     return gMemberList
 
