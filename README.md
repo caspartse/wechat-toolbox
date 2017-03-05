@@ -3,7 +3,7 @@ WeChat toolbox.
 
 # Features
 
-## wxContact.py
+## wxExportContact.py
 * 导出微信通讯录好友（昵称、微信号、备注名、性别、省份、城市、签名）
 * 隐私设置缘故，部分微信号无法获取
 
@@ -18,7 +18,7 @@ v0.1.2
 ---
 Mar 5, 2017
 
-* Add wxContact module
+* Add wxExportContact module
 * Bug fix
 
 v0.1.1

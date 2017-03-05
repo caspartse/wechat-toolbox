@@ -7,7 +7,7 @@ from time import strftime, localtime
 import xlsxwriter
 
 
-def saveContact(memberList):
+def saveContactFile(memberList):
     _data = [(u'昵称', u'微信号', u'备注名', u'性别', u'省份', u'城市', u'签名')]
     for contact in memberList:
         if not isPerson(contact):
@@ -48,5 +48,5 @@ if __name__ == '__main__':
     w.accountLogin()
     w.accountInit()
     print '=== %s ===\n' % (w.nickName)
-    count = saveContact(w.wx_memberList)
+    count = saveContactFile(w.wx_memberList)
     print 'total: %d' % (count)
