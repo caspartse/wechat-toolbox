@@ -191,6 +191,29 @@ class WebChat(object):
         mc.set('wx_memberDict', self.wx_memberDict)
         return
 
+    def batchGetContact(self, queryList):
+        # Max size of queryList: 50
+        # queryList = [{'UserName': 'xxx', 'EncryChatRoomId': 'xxxx'}, {'UserName': 'xxx', 'EncryChatRoomId': ''},]
+        if self.wx_version == 1:
+            url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact?type=ex&r=%s&pass_ticket=%s' % (
+                genTimeStamp(13), self.wx_params.get('pass_ticket', ''))
+        else:
+            url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact?type=ex&r=%s&pass_ticket=%s' % (
+                genTimeStamp(13), self.wx_params.get('pass_ticket', ''))
+        payload = {
+            'BaseRequest': {
+                'Uin': self.wx_params['uin'],
+                'Sid': self.wx_params['sid'],
+                'Skey': self.wx_params.get('skey', ''),
+                'DeviceID': self.wx_params['device_id']
+            },
+            'Count': len(queryList),
+            'List': queryList
+        }
+        resp = self.sess.post(url, data=json.dumps(payload), timeout=1000)
+        data = json.loads(resp.content)
+        return data
+
     def syncCheck(self):
         syncKeyString = '%7C'.join(['%s_%s' % (
             item['Key'], item['Val']) for item in self.wx_params['syncKey']['List']])
@@ -247,23 +270,23 @@ class WebChat(object):
         return resp
 
     def sendTextMsg(self, userName, text):
-        if self.wxInitVersion == 1:
+        if self.wx_version == 1:
             url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg?pass_ticket=%s' % (
-                self.params['pass_ticket'])
+                self.wx_params['pass_ticket'])
         else:
             url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg'
         timeStamp = genTimeStamp(17)
         payload = {
             'BaseRequest': {
-                'Uin': int(self.params['uin']),
-                'Sid': self.params['sid'],
-                'Skey': self.params['skey'],
-                'DeviceID': self.params['device_id']
+                'Uin': int(self.wx_params['uin']),
+                'Sid': self.wx_params['sid'],
+                'Skey': self.wx_params['skey'],
+                'DeviceID': self.wx_params['device_id']
             },
             'Msg': {
                 'Type': 1,
                 'Content': text,
-                'FromUserName': self.params['user_name'],
+                'FromUserName': self.wx_params['user_name'],
                 'ToUserName': userName,
                 'LocalID': timeStamp,
                 'ClientMsgId': timeStamp,
@@ -278,7 +301,7 @@ class WebChat(object):
         return resp
 
     def uploadImage(self, userName, fileName):
-        if self.wxInitVersion == 1:
+        if self.wx_version == 1:
             url = 'https://file.wx.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json'
         else:
             url = 'https://file.wx2.qq.com/cgi-bin/mmwebwx-bin/webwxuploadmedia?f=json'
@@ -288,17 +311,17 @@ class WebChat(object):
         payload = {
             'UploadType': 2,
             'BaseRequest': {
-                'Uin': int(self.params['uin']),
-                'Sid': self.params['sid'],
-                'Skey': self.params['skey'],
-                'DeviceID': self.params['device_id']
+                'Uin': int(self.wx_params['uin']),
+                'Sid': self.wx_params['sid'],
+                'Skey': self.wx_params['skey'],
+                'DeviceID': self.wx_params['device_id']
             },
             'ClientMediaId': int(genTimeStamp(13)),
             'TotalLen': imgLen,
             'StartPos': 0,
             'DataLen': imgLen,
             'MediaType': 4,
-            'FromUserName': self.params['user_name'],
+            'FromUserName': self.wx_params['user_name'],
             'ToUserName': userName,
             # fake
             'FileMd5': md5(str(time())).hexdigest()
@@ -313,8 +336,8 @@ class WebChat(object):
             'size': str(imgLen),
             'mediatype': 'pic',
             'uploadmediarequest': json.dumps(payload, ensure_ascii=False).encode('utf-8'),
-            'webwx_data_ticket': self.params.get('webwx_data_ticket', ''),
-            'pass_ticket': self.params.get('pass_ticket', ''),
+            'webwx_data_ticket': self.wx_params.get('webwx_data_ticket', ''),
+            'pass_ticket': self.wx_params.get('pass_ticket', ''),
             'filename': ('filename', open(fileName, 'rb'), mimeType),
         }
         m = MultipartEncoder(fields)
@@ -329,26 +352,25 @@ class WebChat(object):
         mc.set('wx_params', self.wx_params)
         return mediaId
 
-    def sendImage(self, userName, mediaId=None, fileName=None):
-        if not mediaId:
-            mediaId = self.uploadImage(userName, fileName)
-        if self.wxInitVersion == 1:
+    def sendImage(self, userName, fileName=None):
+        mediaId = self.uploadImage(userName, fileName)
+        if self.wx_version == 1:
             url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json&pass_ticket=%s' % (
-                self.params['pass_ticket'])
+                self.wx_params['pass_ticket'])
         else:
             url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json'
-        timeStamp = self.genTimeStamp(17)
+        timeStamp = genTimeStamp(17)
         payload = {
             'BaseRequest': {
-                'Uin': int(self.params['uin']),
-                'Sid': self.params['sid'],
-                'Skey': self.params['skey'],
-                'DeviceID': self.params['device_id']
+                'Uin': int(self.wx_params['uin']),
+                'Sid': self.wx_params['sid'],
+                'Skey': self.wx_params['skey'],
+                'DeviceID': self.wx_params['device_id']
             },
             'Msg': {
                 'Type': 3,
                 'MediaId': mediaId,
-                'FromUserName':  self.params['user_name'],
+                'FromUserName':  self.wx_params['user_name'],
                 'ToUserName': userName,
                 'LocalID': timeStamp,
                 'ClientMsgId': timeStamp

@@ -5,7 +5,10 @@ from wxUtils import *
 from time import time, sleep
 
 
-def handle(self, resp):
+w = WebChat(daemon=True)
+
+
+def handle(resp):
     try:
         ret = resp.json()['BaseResponse']['Ret']
     except:
@@ -23,7 +26,6 @@ def handle(self, resp):
 
 
 if __name__ == '__main__':
-    w = WebChat(daemon=True)
     w.accountLogin()
     w.accountInit()
     print '=== %s ===\n' % (w.nickName)
@@ -32,14 +34,14 @@ if __name__ == '__main__':
     total = len(firends)
     for index, firend in enumerate(firends):
         print '[%d/%d] %s' % (index + 1, total, removeEmoji(firend['NickName']))
-        w.handle(w.sendTextMsg(firend['UserName'], u'转发这条锦鲤'))
-        w.handle(w.sendImage(firend['UserName'], 'Koi.jpg'))
+        handle(w.sendTextMsg(firend['UserName'], u'转发这条锦鲤'))
+        handle(w.sendImage(firend['UserName'], 'Koi.jpg'))
         sleep(7)
     # Send to Groups
     groups = [contact for contact in w.wx_memberList if '@@' in contact['UserName']]
     total = len(groups)
     for index, group in enumerate(groups):
         print '[%d/%d] %s' % (index + 1, total, removeEmoji(group['NickName']))
-        w.handle(w.sendTextMsg(group['UserName'], u'转发这条锦鲤'))
-        w.handle(w.sendImage(group['UserName'], 'Koi.jpg'))
+        handle(w.sendTextMsg(group['UserName'], u'转发这条锦鲤'))
+        handle(w.sendImage(group['UserName'], 'Koi.jpg'))
         sleep(7)

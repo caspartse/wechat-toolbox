@@ -7,6 +7,9 @@ from time import strftime, localtime
 import xlsxwriter
 
 
+w = WebChat()
+
+
 def saveContactFile(memberList):
     _data = [(u'昵称', u'微信号', u'备注名', u'性别', u'省份', u'城市', u'签名')]
     for contact in memberList:
@@ -40,13 +43,12 @@ def saveContactFile(memberList):
         worksheet.write(row, col + 6, signature)
         row += 1
     workbook.close()
-    return row
+    print 'total: %d' % (row - 1)
+    return
 
 
 if __name__ == '__main__':
-    w = WebChat()
     w.accountLogin()
     w.accountInit()
     print '=== %s ===\n' % (w.nickName)
-    count = saveContactFile(w.wx_memberList)
-    print 'total: %d' % (count)
+    saveContactFile(w.wx_memberList)

@@ -37,7 +37,7 @@ def isPerson(contact):
 
 def removeEmoji(content):
     content = re.sub(r'</?span[^>]*>|[\r\n\t]', ' ', content)
-    content.replace('&amp;', '&').strip()
+    content = content.replace('&amp;', '&').strip()
     return content
 
 
@@ -49,6 +49,17 @@ def convertGender(sex):
     else:
         gender = ''
     return gender
+
+
+def isFriend(friendsUserName, userName):
+    try:
+        if userName in friendsUserName:
+            val = u'是'
+        else:
+            val = u'否'
+    except:
+        val = ''
+    return val
 
 
 if __name__ == '__main__':
