@@ -24,7 +24,7 @@ v0.1.2
 Mar 5, 2017
 
 * Add wxExportContact module
-* 
+* Add wxExportGroups module
 * Bug fix
 
 v0.1.1
