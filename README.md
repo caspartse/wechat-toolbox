@@ -1,5 +1,5 @@
 # wechat-toolbox
-WeChat toolbox.
+WeChat toolbox（微信工具箱）
 
 # Features
 
