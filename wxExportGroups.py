@@ -17,7 +17,7 @@ def queryGMemberList(gUserName):
     gMemberList = []
     chunks = [queryList[i:i + 50] for i in range(0, len(queryList), 50)]
     for chunk in chunks:
-        data = w.batchGetContact(queryList)
+        data = w.batchGetContact(chunk)
         gMemberList.extend(data['ContactList'])
     return gMemberList
 
