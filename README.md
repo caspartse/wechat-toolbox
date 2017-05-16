@@ -4,8 +4,11 @@ WeChat toolbox（微信工具箱）
 # Features
 
 ## wxExportContact.py
-* 导出微信通讯录好友（昵称、~~微信号~~、备注名、性别、省份、城市、签名）
+* 导出微信通讯录好友（昵称、备注名、显示名、~~微信号~~、性别、省份、城市、签名）
+* 为方便阅读及显示，已移除昵称、备注名中的 Emoji 等特殊内容
+* 显示名：备注名非空为备注名，反之为昵称
 * ~~隐私设置缘故，部分微信号无法获取~~ （微信版本升级，已无法获取微信号）
+* 通讯录按显示名全拼升序排列，特殊类型置于末尾
 
 online demo: [http://kagent.applinzi.com/wx](http://kagent.applinzi.com/wx)
 
@@ -21,16 +24,22 @@ online demo: [http://kagent.applinzi.com/wx](http://kagent.applinzi.com/wx)
 
 
 # External Resources
-* [memcached](https://memcached.org/)
+* [Memcached](https://memcached.org/)
 * [XlsxWriter](https://xlsxwriter.readthedocs.io/)
 
 
 # Changelog
+v0.1.4
+---
+May 17, 2017
+* Bug fix
+* Sort contact list and add  "ScreenName" field
+
 v0.1.3
 ---
 May 14, 2017
 * Update README file
-* Add on line demo (wxExportContact)
+* Add online demo (wxExportContact)
 
 v0.1.2
 ---

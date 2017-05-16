@@ -62,5 +62,25 @@ def isFriend(friendsUserName, userName):
     return val
 
 
+def pickScreenName(NickName, RemarkName):
+    if RemarkName:
+        return removeEmoji(RemarkName)
+    else:
+        return removeEmoji(NickName)
+
+
+def formatQuanPin(PYQuanPin, RemarkPYQuanPin):
+    PYQuanPin = re.sub(r'spanclassemojiemoji\w{5}span|\?', '~', PYQuanPin.strip())
+    PYQuanPin = re.sub(r'~+', '~', PYQuanPin)
+    RemarkPYQuanPin = re.sub(r'spanclassemojiemoji\w{5}span|\?', '~', RemarkPYQuanPin.strip())
+    RemarkPYQuanPin = re.sub(r'~+', '~', RemarkPYQuanPin)
+    if RemarkPYQuanPin:
+        return RemarkPYQuanPin.lower()
+    elif PYQuanPin:
+        return PYQuanPin.lower()
+    else:
+        return '~'
+
+
 if __name__ == '__main__':
     pass

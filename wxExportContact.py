@@ -11,20 +11,24 @@ w = WebChat()
 
 
 def saveContactFile(memberList):
-    _data = [(u'昵称', u'微信号', u'备注名', u'性别', u'省份', u'城市', u'签名')]
+    _data = [(u'昵称', u'备注名', u'显示名', u'微信号', u'性别', u'省份', u'城市', u'签名', ' ')]
     for contact in memberList:
         if not isPerson(contact):
             continue
         info = (
             removeEmoji(contact['NickName']),
-            contact['Alias'],
             removeEmoji(contact['RemarkName']),
+            pickScreenName(contact['NickName'], contact['RemarkName']),
+            contact['Alias'],
             convertGender(contact['Sex']),
             contact['Province'],
             contact['City'],
-            removeEmoji(contact['Signature'])
+            removeEmoji(contact['Signature']),
+            formatQuanPin(contact['PYQuanPin'], contact['RemarkPYQuanPin'])
         )
         _data.append(info)
+    _data.sort(key=lambda x: x[-1])
+    _data = [e[:-1] for e in _data]
     filename = u'%s_微信好友_%s.xlsx' % (
         removeEmoji(w.nickName),
         strftime('%Y%m%d-%H%M%S', localtime()),
@@ -33,14 +37,15 @@ def saveContactFile(memberList):
     worksheet = workbook.add_worksheet()
     row = 0
     col = 0
-    for nickName, alias, remarkName, gender, province, city, signature in OrderedSet(_data):
+    for nickName, remarkName, screenName, alias, gender, province, city, signature in OrderedSet(_data):
         worksheet.write(row, col, nickName)
-        worksheet.write(row, col + 1, alias)
-        worksheet.write(row, col + 2, remarkName)
-        worksheet.write(row, col + 3, gender)
-        worksheet.write(row, col + 4, province)
-        worksheet.write(row, col + 5, city)
-        worksheet.write(row, col + 6, signature)
+        worksheet.write(row, col + 1, remarkName)
+        worksheet.write(row, col + 2, screenName)
+        worksheet.write(row, col + 3, alias)
+        worksheet.write(row, col + 4, gender)
+        worksheet.write(row, col + 5, province)
+        worksheet.write(row, col + 6, city)
+        worksheet.write(row, col + 7, signature)
         row += 1
     workbook.close()
     print 'total: %d' % (row - 1)

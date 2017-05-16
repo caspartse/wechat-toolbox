@@ -391,8 +391,8 @@ class WebChat(object):
             url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxlogout?redirect=1&type=1&skey=%s' % (
                 self.wx_params.get('skey', ''))
         payload = {
-            'Sid': self.wx_params['sid'],
-            'Uin': self.wx_params['uin']
+            'sid': self.wx_params['sid'],
+            'uin': self.wx_params['uin']
         }
         self.sess.post(url, data=payload, timeout=1000)
         return
