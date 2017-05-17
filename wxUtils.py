@@ -71,8 +71,12 @@ def pickScreenName(NickName, RemarkName):
 
 def formatQuanPin(PYQuanPin, RemarkPYQuanPin):
     PYQuanPin = re.sub(r'spanclassemojiemoji\w{5}span|\?', '~', PYQuanPin.strip())
+    if re.match(r'^\d', PYQuanPin):
+        PYQuanPin = '~' + PYQuanPin
     PYQuanPin = re.sub(r'~+', '~', PYQuanPin)
     RemarkPYQuanPin = re.sub(r'spanclassemojiemoji\w{5}span|\?', '~', RemarkPYQuanPin.strip())
+    if re.match(r'^\d', RemarkPYQuanPin):
+        RemarkPYQuanPin = '~' + RemarkPYQuanPin
     RemarkPYQuanPin = re.sub(r'~+', '~', RemarkPYQuanPin)
     if RemarkPYQuanPin:
         return RemarkPYQuanPin.lower()
