@@ -29,6 +29,11 @@ online demo: [http://kagent.applinzi.com/wx](http://kagent.applinzi.com/wx)
 
 
 # Changelog
+v0.1.5
+---
+Jul 17, 2017
+* Bug fix
+
 v0.1.4
 ---
 May 17, 2017

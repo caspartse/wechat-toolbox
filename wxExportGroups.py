@@ -3,6 +3,10 @@
 from wxCommon import WebChat
 from wxUtils import *
 from time import strftime, localtime
+try:
+    import simplejson as json
+except ImportError:
+    import json
 import xlsxwriter
 
 
@@ -67,7 +71,7 @@ def saveGroupFile(groups, firends):
 
 
 if __name__ == '__main__':
-    w.accountLogin()
+    #w.accountLogin()
     w.accountInit()
     print '=== %s ===\n' % (w.nickName)
     firends = [contact for contact in w.wx_memberList if isPerson(contact)]

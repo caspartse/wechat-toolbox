@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*
+import sys
 from wxUtils import *
 import pylibmc
 import requests
@@ -14,7 +15,6 @@ try:
     import xml.etree.cElementTree as ET
 except ImportError:
     import xml.etree.ElementTree as ET
-import codecs
 import imghdr
 from hashlib import md5
 from requests_toolbelt import MultipartEncoder
@@ -25,12 +25,14 @@ mc = pylibmc.Client(['127.0.0.1:11211'])
 
 class WebChat(object):
 
-    def __init__(self, daemon=False):
+    def __init__(self, daemon=False, flush=True):
         super(WebChat, self).__init__()
+        if flush:
+            mc.delete_multi(['wx_session', 'wx_params', 'wx_uuid'])
         self.daemon = daemon
         self.sess = mc.get('wx_session') or requests.Session()
         headers = {
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:53.0) Gecko/20100101 Firefox/53.0',
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:55.0) Gecko/20100101 Firefox/55.0',
             'Accept-Language': 'zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3'
         }
         self.sess.headers.update(headers)
@@ -40,13 +42,20 @@ class WebChat(object):
         #self.sess.verify = False
 
     def fetchQRCode(self):
-        url = 'https://login.wx.qq.com/jslogin?appid=wx782c26e4c19acffb&redirect_uri=https%3A%2F%2Fwx.qq.com%2Fcgi-bin%2Fmmwebwx-bin%2Fwebwxnewloginpage&fun=new&lang=zh_CN&_=' + \
-            genTimeStamp(13)
-        resp = self.sess.get(url, timeout=1000)
+        mc.set('wx_stime', int(genTimeStamp(13)))
+        url = 'https://login.wx.qq.com/jslogin'
+        params = {
+            'appid': 'wx782c26e4c19acffb',
+            'redirect_uri': 'https%3A%2F%2Fwx.qq.com%2Fcgi-bin%2Fmmwebwx-bin%2Fwebwxnewloginpage',
+            'fun': 'new',
+            'lang': 'zh_CN',
+            '_': str(mc.incr('wx_stime'))
+        }
+        resp = self.sess.get(url, params=params, timeout=10000)
         pattern = r'window\.QRLogin\.code\s?=\s?200;\s*window\.QRLogin\.uuid\s?=\s?"([^"]+)";'
         self.wx_uuid = re.search(pattern, resp.content).group(1)
         url = 'https://login.weixin.qq.com/qrcode/%s' % (self.wx_uuid)
-        resp = self.sess.get(url, timeout=1000)
+        resp = self.sess.get(url, timeout=10000)
         cookies = self.sess.cookies.get_dict()
         self.wx_params.update(cookies)
         mc.set('wx_session', self.sess)
@@ -60,12 +69,15 @@ class WebChat(object):
         t1.start()
         while 1:
             sleep(0.25)
-            url = 'https://login.weixin.qq.com/cgi-bin/mmwebwx-bin/login?loginicon=true&uuid=%s&tip=0&r=-%s&_=%s' % (
-                self.wx_uuid,
-                genRandint(9),
-                genTimeStamp(13)
-            )
-            resp = self.sess.get(url, timeout=1000)
+            url = 'https://login.wx.qq.com/cgi-bin/mmwebwx-bin/login'
+            params = {
+                'loginicon': 'true',
+                'uuid': self.wx_uuid,
+                'tip': '0',
+                'r': genRString(),
+                '_': str(mc.incr('wx_stime'))
+            }
+            resp = self.sess.get(url, params=params, timeout=10000)
             content = resp.content
             if ('window.code=200;' in content):
                 break
@@ -79,8 +91,20 @@ class WebChat(object):
             self.wx_version = 1
         mc.set('wx_version', self.wx_version)
         try:
+            resp = self.sess.get(url, timeout=10000)
+            cookies = self.sess.cookies.get_dict()
+            self.wx_params.update(cookies)
+            self.wx_params.update(
+                {
+                    'uin': cookies.get('wxuin'),
+                    'sid': cookies.get('wxsid'),
+                    'skey': '',
+                    'pass_ticket': ''
+                }
+            )
+        except:
             newUrl = url + '&fun=new&version=v2'
-            resp = self.sess.get(newUrl, timeout=1000)
+            resp = self.sess.get(newUrl, timeout=10000)
             cookies = self.sess.cookies.get_dict()
             self.wx_params.update(cookies)
             content = resp.content
@@ -91,20 +115,6 @@ class WebChat(object):
                     'uin': root.find('wxuin').text,
                     'sid': root.find('wxsid').text,
                     'pass_ticket': root.find('pass_ticket').text,
-                    'device_id': 'e%s' % (genRandint(15))
-                }
-            )
-        except:
-            resp = self.sess.get(url, timeout=1000)
-            cookies = self.sess.cookies.get_dict()
-            self.wx_params.update(cookies)
-            self.wx_params.update(
-                {
-                    'uin': cookies.get('wxuin'),
-                    'sid': cookies.get('wxsid'),
-                    'device_id': 'e%s' % (genRandint(15)),
-                    'skey': '',
-                    'pass_ticket': ''
                 }
             )
         mc.set('wx_session', self.sess)
@@ -114,31 +124,32 @@ class WebChat(object):
 
     def accountInit(self):
         if self.wx_version == 1:
-            url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxinit?r=-%s&pass_ticket=%s' % (
-                genRandint(9), self.wx_params.get('pass_ticket', ''))
+            url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxinit'
         else:
-            url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxinit?r=-%s' % (
-                genRandint(9))
+            url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxinit'
+        params = {
+            'r': genRString(),
+            'pass_ticket': self.wx_params.get('pass_ticket', '')
+        }
         payload = {
-            'BaseRequest':
-            {
+            'BaseRequest': {
                 'Uin': self.wx_params['uin'],
                 'Sid': self.wx_params['sid'],
                 'Skey': self.wx_params.get('skey', ''),
-                'DeviceID': self.wx_params['device_id']
+                'DeviceID': genDeviceId()
             }
         }
-        resp = self.sess.post(url, data=json.dumps(payload), timeout=1000)
+        resp = self.sess.post(url, params=params,
+                              data=json.dumps(payload), timeout=10000)
         content = resp.content
         data = json.loads(content)
-        syncKey = data['SyncKey']
         cookies = self.sess.cookies.get_dict()
         self.wx_params.update(cookies)
         self.wx_params.update(
             {
                 'user_name': data['User']['UserName'],
                 'skey': data['SKey'],
-                'syncKey': syncKey
+                'syncKey': data['SyncKey']
             }
         )
         mc.set('wx_session', self.sess)
@@ -155,33 +166,30 @@ class WebChat(object):
 
     def getContact(self):
         if self.wx_version == 1:
-            url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact?pass_ticket=%s&r=%s&seq=0&skey=%s' % (
-                self.wx_params.get('pass_ticket', ''),
-                genTimeStamp(13),
-                self.wx_params['skey']
-            )
+            url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact'
         else:
-            url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact?r=%s&seq=0&skey=%s' % (
-                genTimeStamp(13),
-                self.wx_params['skey']
-            )
-        _memberList = []
-        _seq = 0
+            url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact'
+        params = {
+            'r': genTimeStamp(13),
+            'seq': '0',
+            'skey': self.wx_params['skey'],
+            'pass_ticket': self.wx_params.get('pass_ticket', '')
+        }
+        memberList = []
         while 1:
-            pattern = r'seq=\d+'
-            url = re.sub(pattern, 'seq=' + str(_seq), url)
             try:
-                resp = self.sess.get(url, timeout=10000)
+                resp = self.sess.get(url, params=params, timeout=100000)
                 content = resp.content
                 data = json.loads(content)
                 if resp.status_code == 200:
-                    _memberList.extend(data['MemberList'])
-                    _seq = data['Seq']
-                if str(_seq) == '0':
+                    memberList.extend(data['MemberList'])
+                if data['Seq'] == 0:
                     break
+                else:
+                    params.updaut({'seq': str(data['Seq'])})
             except:
                 pass
-        self.wx_memberList = _memberList
+        self.wx_memberList = memberList
         self.wx_memberDict = {contact['UserName']: contact for contact in self.wx_memberList}
         cookies = self.sess.cookies.get_dict()
         self.wx_params.update(cookies)
@@ -195,42 +203,45 @@ class WebChat(object):
         # Max size of queryList: 50
         # queryList = [{'UserName': 'xxx', 'EncryChatRoomId': 'xxxx'}, {'UserName': 'xxx', 'EncryChatRoomId': ''},]
         if self.wx_version == 1:
-            url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact?type=ex&r=%s&pass_ticket=%s' % (
-                genTimeStamp(13), self.wx_params.get('pass_ticket', ''))
+            url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact'
         else:
-            url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact?type=ex&r=%s&pass_ticket=%s' % (
-                genTimeStamp(13), self.wx_params.get('pass_ticket', ''))
+            url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxbatchgetcontact'
+        params = {
+            'type': 'ex',
+            'r': genTimeStamp(13),
+            'pass_ticket': self.wx_params.get('pass_ticket', '')
+        }
         payload = {
             'BaseRequest': {
                 'Uin': self.wx_params['uin'],
                 'Sid': self.wx_params['sid'],
                 'Skey': self.wx_params.get('skey', ''),
-                'DeviceID': self.wx_params['device_id']
+                'DeviceID': genDeviceId()
             },
             'Count': len(queryList),
             'List': queryList
         }
-        resp = self.sess.post(url, data=json.dumps(payload), timeout=1000)
+        resp = self.sess.post(url, params=params,
+                              data=json.dumps(payload), timeout=10000)
         return resp
 
     def syncCheck(self):
         syncKeyString = '%7C'.join(['%s_%s' % (
             item['Key'], item['Val']) for item in self.wx_params['syncKey']['List']])
         if self.wx_version == 1:
-            url = 'https://webpush.wx.qq.com/cgi-bin/mmwebwx-bin/synccheck?'
+            url = 'https://webpush.wx.qq.com/cgi-bin/mmwebwx-bin/synccheck'
         else:
-            url = 'https://webpush.wx2.qq.com/cgi-bin/mmwebwx-bin/synccheck?'
-        params = 'r=%s&skey=%s&sid=%s&uin=%s&deviceid=%s&synckey=%s&_=%s' % (
-            genTimeStamp(13),
-            self.wx_params.get('skey', ''),
-            self.wx_params['sid'],
-            self.wx_params['uin'],
-            self.wx_params['device_id'],
-            syncKeyString,
-            genTimeStamp(13)
-        )
-        url = url + params
-        resp = self.sess.get(url, timeout=1000)
+            url = 'https://webpush.wx2.qq.com/cgi-bin/mmwebwx-bin/synccheck'
+        params = {
+            'r': genTimeStamp(13),
+            'skey': self.wx_params.get('skey', ''),
+            'sid': self.wx_params['sid'],
+            'uin': self.wx_params['uin'],
+            'deviceid': genDeviceId(),
+            'synckey': syncKeyString,
+            '_': str(mc.incr('wx_stime'))
+        }
+        resp = self.sess.get(url, params=params, timeout=10000)
         cookies = self.sess.cookies.get_dict()
         self.wx_params.update(cookies)
         mc.set('wx_session', self.sess)
@@ -239,26 +250,25 @@ class WebChat(object):
 
     def wxSync(self):
         if self.wx_version == 1:
-            url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsync?sid=%s&skey=%s' % (
-                self.wx_params['sid'],
-                self.wx_params.get('skey', ''),
-            )
+            url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsync'
         else:
-            url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsync?sid=%s&skey=%s' % (
-                self.wx_params['sid'],
-                self.wx_params.get('skey', ''),
-            )
+            url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsync'
+        params = {
+            'sid': self.wx_params['sid'],
+            'skey': self.wx_params.get('skey', '')
+        }
         payload = {
             'BaseRequest': {
                 'Uin': self.wx_params['uin'],
                 'Sid': self.wx_params['sid'],
                 'Skey': self.wx_params.get('skey', ''),
-                'DeviceID': self.wx_params['device_id']
+                'DeviceID': genDeviceId()
             },
             'SyncKey': self.wx_params['syncKey'],
-            'rr': '-%s' % (genRandint(9))
+            'rr': genRString()
         }
-        resp = self.sess.post(url, data=json.dumps(payload), timeout=1000)
+        resp = self.sess.post(url, params=params,
+                              data=json.dumps(payload), timeout=10000)
         data = json.loads(resp.content)
         syncKey = data['SyncKey']
         cookies = self.sess.cookies.get_dict()
@@ -270,17 +280,18 @@ class WebChat(object):
 
     def sendTextMsg(self, userName, text):
         if self.wx_version == 1:
-            url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg?pass_ticket=%s' % (
-                self.wx_params['pass_ticket'])
+            url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg?pass_ticket=' + \
+                self.wx_params['pass_ticket']
         else:
-            url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg'
+            url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg?pass_ticket=' + \
+                self.wx_params['pass_ticket']
         timeStamp = genTimeStamp(17)
         payload = {
             'BaseRequest': {
                 'Uin': int(self.wx_params['uin']),
                 'Sid': self.wx_params['sid'],
                 'Skey': self.wx_params['skey'],
-                'DeviceID': self.wx_params['device_id']
+                'DeviceID': genDeviceId()
             },
             'Msg': {
                 'Type': 1,
@@ -292,7 +303,7 @@ class WebChat(object):
             }
         }
         resp = self.sess.post(url, data=json.dumps(
-            payload, ensure_ascii=False).encode('utf-8'), timeout=1000)
+            payload, ensure_ascii=False).encode('utf-8'), timeout=10000)
         cookies = self.sess.cookies.get_dict()
         self.wx_params.update(cookies)
         mc.set('wx_session', self.sess)
@@ -313,7 +324,7 @@ class WebChat(object):
                 'Uin': int(self.wx_params['uin']),
                 'Sid': self.wx_params['sid'],
                 'Skey': self.wx_params['skey'],
-                'DeviceID': self.wx_params['device_id']
+                'DeviceID': genDeviceId()
             },
             'ClientMediaId': int(genTimeStamp(13)),
             'TotalLen': imgLen,
@@ -343,7 +354,7 @@ class WebChat(object):
         headers = self.sess.headers
         headers.update({'Content-Type': m.content_type})
         resp = self.sess.post(
-            url, headers=headers, data=m, timeout=1000)
+            url, headers=headers, data=m, timeout=10000)
         mediaId = json.loads(resp.content).get('MediaId')
         cookies = self.sess.cookies.get_dict()
         self.wx_params.update(cookies)
@@ -354,17 +365,21 @@ class WebChat(object):
     def sendImage(self, userName, fileName=None):
         mediaId = self.uploadImage(userName, fileName)
         if self.wx_version == 1:
-            url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json&pass_ticket=%s' % (
-                self.wx_params['pass_ticket'])
+            url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg'
         else:
-            url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json'
+            url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg'
+        params = {
+            'fun': 'async',
+            'f': 'json',
+            'pass_ticket': self.wx_params['pass_ticket']
+        }
         timeStamp = genTimeStamp(17)
         payload = {
             'BaseRequest': {
                 'Uin': int(self.wx_params['uin']),
                 'Sid': self.wx_params['sid'],
                 'Skey': self.wx_params['skey'],
-                'DeviceID': self.wx_params['device_id']
+                'DeviceID': genDeviceId()
             },
             'Msg': {
                 'Type': 3,
@@ -375,8 +390,8 @@ class WebChat(object):
                 'ClientMsgId': timeStamp
             }
         }
-        resp = self.sess.post(url, data=json.dumps(
-            payload, ensure_ascii=False).encode('utf-8'), timeout=1000)
+        resp = self.sess.post(url, params=params, data=json.dumps(
+            payload, ensure_ascii=False).encode('utf-8'), timeout=10000)
         cookies = self.sess.cookies.get_dict()
         self.wx_params.update(cookies)
         mc.set('wx_session', self.sess)
@@ -385,45 +400,53 @@ class WebChat(object):
 
     def accountLogout(self):
         if self.wx_version == 1:
-            url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxlogout?redirect=1&type=1&skey=%s' % (
-                self.wx_params.get('skey', ''))
+            url = 'https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxlogout'
         else:
-            url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxlogout?redirect=1&type=1&skey=%s' % (
-                self.wx_params.get('skey', ''))
+            url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxlogout'
+        params = {
+            'redirect': '1',
+            'type': '1',
+            'skey': self.wx_params.get('skey', '')
+        }
         payload = {
             'sid': self.wx_params['sid'],
             'uin': self.wx_params['uin']
         }
-        self.sess.post(url, data=payload, timeout=1000)
+        self.sess.post(url, params=params, data=payload, timeout=10000)
         return
 
     def wxDaemon(self):
         while 1:
             if not self.wx_params.get('syncKey'):
-                status = 'Shutdown'
+                self.accountLogout()
+                status = 'Shutdown (-1)'
                 selector = '-1'
             else:
-                resp = self.syncCheck()
-                pattern = r'window.synccheck={retcode:"(\d+)",selector:"(\d+)"}'
-                retcode, selector = re.findall(pattern, resp.content)[0]
-                if retcode == '0':
-                    status = 'Running'
-                elif retcode in ['1101', '1102']:
-                    self.accountLogout()
-                    return
-                else:
-                    status = 'None'
-            wxLog = '[%s] - %s - %s\n' % (
-                strftime('%d/%b/%Y %H:%M:%S', localtime()),
-                self.nickName,
-                status
-            )
-            with codecs.open('wx.log', 'a+', 'utf-8') as f:
-                f.write(wxLog)
-            f.close()
+                try:
+                    resp = self.syncCheck()
+                    pattern = r'window.synccheck={retcode:"(\d+)",selector:"(\d+)"}'
+                    retcode, selector = re.findall(pattern, resp.content)[0]
+                    if retcode == '0':
+                        status = 'Running'
+                    elif retcode in ['1101', '1102']:
+                        self.accountLogout()
+                        status = 'Shutdown (-2)'
+                        selector = '-2'
+                    else:
+                        status = str(retcode)
+                except Exception, e:
+                    status = e
+                    selector = '0'
+            writeLog(self.nickName, status)
             if int(selector) > 0:
-                self.wxSync()
-            sleep(20)
+                try:
+                    resp = self.wxSync()
+                except Exception, e:
+                    writeLog(self.nickName, e)
+            elif int(selector) < 0:
+                mc.delete_multi(['wx_session', 'wx_params', 'wx_uuid'])
+                sys.exit(1)
+            sleep(30)
 
 
 if __name__ == '__main__':
