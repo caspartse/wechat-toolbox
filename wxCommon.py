@@ -18,9 +18,14 @@ except ImportError:
 import imghdr
 from hashlib import md5
 from requests_toolbelt import MultipartEncoder
+try:
+    import redis
+except ImportError:
+    pass
 
 
 mc = pylibmc.Client(['127.0.0.1:11211'])
+rd = redis.Redis()
 
 
 class WebChat(object):
@@ -441,12 +446,14 @@ class WebChat(object):
             if int(selector) > 0:
                 try:
                     resp = self.wxSync()
+                    rd.lpush('syncData', resp.content)
                 except Exception, e:
                     writeLog(self.nickName, e)
             elif int(selector) < 0:
                 mc.delete_multi(['wx_session', 'wx_params', 'wx_uuid'])
+                rd.delete('wx_daemon')
                 sys.exit(1)
-            sleep(30)
+            sleep(20)
 
 
 if __name__ == '__main__':

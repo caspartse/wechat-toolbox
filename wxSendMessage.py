@@ -22,7 +22,7 @@ def handle(resp):
             sleep(30)
     else:
         print 'Error.'
-    return
+    return ret
 
 
 if __name__ == '__main__':

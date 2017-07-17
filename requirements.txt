@@ -1,7 +1,8 @@
-simplejson==3.11.1
-requests_toolbelt==0.8.0
-pylibmc==1.5.2
-requests==2.11.1
+redis==2.10.5
 orderedset==2.0
+requests_toolbelt==0.8.0
+requests==2.11.1
+simplejson==3.11.1
+pylibmc==1.5.2
 Pillow==4.2.1
 xlsxwriter==0.9.8
