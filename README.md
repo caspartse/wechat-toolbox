@@ -22,13 +22,22 @@ online demo: [http://kagent.applinzi.com/wx](http://kagent.applinzi.com/wx)
 * 只能读取已保存至通讯录的群聊
 * 连续发送约 100 次后，会受到限制，约 1 小时后才能复活正常
 
+## wxAutoReply.py
+* 自动回复好友消息（回复的时间间隔可自定义）
+
 
 # External Resources
 * [Memcached](https://memcached.org/)
+* [Redis](https://redis.io/)
 * [XlsxWriter](https://xlsxwriter.readthedocs.io/)
 
 
 # Changelog
+v0.1.6
+---
+Jul 17, 2017
+* Add wxAutoReply module
+
 v0.1.5
 ---
 Jul 17, 2017
