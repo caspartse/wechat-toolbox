@@ -10,12 +10,13 @@ WeChat toolbox（微信工具箱）
 * ~~隐私设置缘故，部分微信号无法获取~~ （微信版本升级，已无法获取微信号）
 * 通讯录按显示名全拼升序排列，特殊类型置于末尾
 
-online demo: [http://kagent.applinzi.com/wx](http://kagent.applinzi.com/wx)
+在线演示: [http://kagent.applinzi.com/wx](http://kagent.applinzi.com/wx)
 
 ## wxExportGroups.py
 * 导出群成员名单（昵称、~~微信号~~、群名片、是否好友、备注名、性别、省份、城市、签名）
 * 只能读取已保存至通讯录的群聊
 * 群成员按进群时间升序排序
+在线演示: [http://kagent.applinzi.com/wxqun](http://kagent.applinzi.com/wxqun)
 
 ## wxSendMessage.py
 * 向好友或微信群发送文本、图片消息
@@ -37,6 +38,7 @@ v0.1.6
 ---
 Jul 17, 2017
 * Add wxAutoReply module
+* Add online demo (wxExportGroups)
 
 v0.1.5
 ---
