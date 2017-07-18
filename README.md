@@ -16,6 +16,7 @@ WeChat toolbox（微信工具箱）
 * 导出群成员名单（昵称、~~微信号~~、群名片、是否好友、备注名、性别、省份、城市、签名）
 * 只能读取已保存至通讯录的群聊
 * 群成员按进群时间升序排序
+
 在线演示: [http://kagent.applinzi.com/wxqun](http://kagent.applinzi.com/wxqun)
 
 ## wxSendMessage.py
